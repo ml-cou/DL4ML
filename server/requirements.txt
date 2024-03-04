@@ -1,0 +1,8 @@
+dill==0.3.8
+Django==5.0.2
+djangorestframework==3.14.0
+numpy==1.26.4
+pandas==2.2.1
+peewee==3.17.1
+ply==3.11
+scikit_learn==1.4.0
