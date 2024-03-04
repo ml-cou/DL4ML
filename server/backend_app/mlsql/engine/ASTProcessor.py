@@ -4,6 +4,8 @@ import datetime
 from ..data.EstimatorMeta import EstimatorMeta
 from ..data.TrainingProfile import TrainingProfile
 from ..engine.LRManager import LRManager
+from ..engine.KNN import KNNManager
+
 from ..engine.FormulaProcessor import FormulaProcessor
 import pprint
 
@@ -31,7 +33,7 @@ class ASTProcessor:
     def getEstimatorMeta(self, name):
         with db:
             print(f"{name} check 33 e dhukse ")
-            res=    EstimatorMeta.select().where(EstimatorMeta.name == name).get()
+            res= EstimatorMeta.select().where(EstimatorMeta.name == name).get()
             print("res thik ase")
             return res
     def getTrainingProfile(self, name):
@@ -51,9 +53,12 @@ class ASTProcessor:
             print("in createMethod")
             if estimatorType == "LR":
                 LRManager().create(name)
+            elif estimatorType == "KNN":
+                KNNManager().create(name)
+
             else:
                 estimatorMeta.delete()
-                raise Exception(f"unrecognized estimator type{estimatorType}")
+                raise Exception(f"unrecognized estimator type {estimatorType}")
 
             estimatorMeta.isAvailable = True
             estimatorMeta.trainable = True
@@ -160,10 +165,12 @@ class ASTProcessor:
                 raise Exception(f"Estimator {estimatorMeta.name} is not availble for use.")
             print("current db passed")
             if trainingProfileName is not None:
+                print(" with training profile name")
                 return self.predictWithTrainingProfile(currentDB, estimatorMeta, trainingProfileName)
             else:
+                print("in with sql")
                 return self.predictWithSQL(currentDB, estimatorMeta, sql)
-
+            print('prediction finished with or without sql')
         except EstimatorMeta.DoesNotExist as e:
             raise Exception(f"{estimatorName} estimator does not exist ({e}).")
 
@@ -173,6 +180,7 @@ class ASTProcessor:
     def predictWithTrainingProfile(self, currentDB, estimatorMeta, trainingProfileName):
         trainingProfile = self.getTrainingProfile(trainingProfileName)
         if trainingProfile.sourceType == 'sql':
+            print("in function of training")
             return self.predictWithSQL(currentDB, estimatorMeta, trainingProfile.source)
         else:
             raise NotImplementedError("prediction with non-sql training profile not implemented yet.")
@@ -185,7 +193,16 @@ class ASTProcessor:
             estimatorManager = LRManager()
             if not estimatorManager.isFitted(estimatorMeta.name):  # You need to implement this method
                 raise Exception(f"Model {estimatorMeta.name} is not fitted. Please train the model before prediction.")
-
             predictions = estimatorManager.predict(estimatorMeta.name, X)
             df['prediction'] = predictions
             return df
+        elif estimatorMeta.estimatorType == 'KNN':  # Add this elif block for KNN
+            estimatorManager = KNNManager()  # Assuming you have a KNNManager class
+            if not estimatorManager.isFitted(estimatorMeta.name):  # You need to implement this method
+                raise Exception(f"Model {estimatorMeta.name} is not fitted. Please train the model before prediction.")
+            print('predict er age')
+            predictions = estimatorManager.predict(estimatorMeta.name, X)
+            df['prediction'] = predictions
+            return df
+        else :
+            raise ("Model is not fitted. or did't found the model")

@@ -1,6 +1,6 @@
-projectFolder = 'D:/pyhton_project/Project/dl4ml/server/backend_app/mlsql'
+# projectFolder = 'D:/pyhton_project/Project/dl4ml/server/backend_app/mlsql'
 import logging, sys, math,os
-sys.path.append(str(projectFolder))
+# sys.path.append(str(projectFolder))
 
 
 from .db import db

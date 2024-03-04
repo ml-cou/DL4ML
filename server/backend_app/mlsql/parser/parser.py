@@ -173,6 +173,7 @@ def p_predict(p):
         df = ASTProcessor.predict(currentDB, estimatorName,sql=sql, trainingProfileName=trainingProfileName )
         global  response
         response = pd.DataFrame(df)
+        print (df)
         response=response.to_dict(orient='records')
         print(df.to_string()) # TODO, use an internal state in parser and print with arrows and exit commands.
     except Exception as e:
