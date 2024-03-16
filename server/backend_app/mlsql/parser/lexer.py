@@ -8,20 +8,97 @@ from .tokens.sql import *
 from .tokens.definitions import *
 from .tokens.data_types import *
 
+#modified
+# Add to the list of keywords if not already present
+modelTokens += ['TABLE']
+dataTypeTokens = [
+    'WORD',
+    # 'CHAR'
+    'FLOAT',
+    'INT',
+    'DELIMITER',
+    'BOOL',
+    'URL'
+]
 
+#regular expressions
+# t_BOOL = r'true|false'
+t_WORD = r'[a-zA-Z_][a-zA-Z_0-9]*'
+t_FLOAT = r'[0-9]+\.[0-9]*|[0-9]*\.[0-9]+'
+t_INT = r'[0-9]+'
+t_DELIMITER = r';'
+# t_CHAR = r'[a-zA-Z_][a-zA-Z_0-9]*'
+trainTokens = [
+    'TRAIN',
+    'WITH',
+    'TRAINING_PROFILE'
+]
+
+utilityTokens = [
+    'SET',
+    'DEBUG',
+    'AS'
+]
+modelTokens = [
+    'CREATE',
+    'CLONE',
+    'MODEL',
+    'ESTIMATOR',
+    'REGULARIZER',
+    'MODEL_TYPE',
+    'FORMULA',
+    'FORMULA_EXP',
+    'LOSS',
+    'LEARNING_RATE',
+    'OPTIMIZER',
+    'WEIGHTS',
+]
+
+trainProfileTokens = [
+    'CREATE',
+    'AND',
+    'TRAINING_PROFILE',
+    'BATCH_SIZE',
+    'EPOCH',
+    'SHUFFLE',
+    'VALIDATION_SPLIT',
+    'WITH',
+    'USE',
+    'BY'
+]
+
+trainTokens = [
+    'TRAIN'
+]
+
+predictTokens = [
+    'PREDICT',
+    'TEST'
+]
+
+sqlKeywords = [
+    'TABLE',
+]
+
+#-------modified end ----------
 keywords = list(set().union(
             modelTokens,
             trainTokens,
             trainProfileTokens,
             predictTokens,
-            utilityTokens
+            utilityTokens,
+            sqlKeywords
             ))
 tokens =  list(set().union(
             dataTypeTokens,
             basicSQL
             )) + keywords
-
+tokens += ['LPAREN', 'RPAREN']
+t_LPAREN = r'\('
+t_RPAREN = r'\)'
 # print(tokens)
+
+
 
 def t_BOOL(t):
     r'true|false'
@@ -49,7 +126,9 @@ def t_FORMULA_EXP(t):
     return t
     
 # keywords rule
-reKyewords = "(" + "|".join(keywords) + ")+[ \n\t]{1}"
+# reKyewords = "(" + "|".join(keywords) + ")+[ \n\t]{1}"
+reKyewords = r'\b(' + '|'.join(keywords) + r')\b'
+
 @TOKEN(reKyewords)
 def t_KEYWORD(t):
     # print(f"found keyword: {t.value}")

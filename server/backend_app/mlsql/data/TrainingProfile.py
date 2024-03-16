@@ -17,11 +17,11 @@ class TrainingProfile(Model):
     
     def __str__(self):
         return f"""name: {self.name}, 
-dateCreated: {self.dateCreated},
-source: {self.source},
-sourceType: {self.sourceType},
-validationSplit: {self.validationSplit},
-batchSize: {self.batchSize},
-epoch: {self.epoch},
-shuffle: {self.shuffle}
-"""
+                    dateCreated: {self.dateCreated},
+                    source: {self.source},
+                    sourceType: {self.sourceType},
+                    validationSplit: {self.validationSplit},
+                    batchSize: {self.batchSize},
+                    epoch: {self.epoch},
+                    shuffle: {self.shuffle}
+                    """

@@ -4,13 +4,13 @@ modelTokens = [
     'MODEL',
     'ESTIMATOR',
     'REGULARIZER',
-    'TYPE',
+    'MODEL_TYPE',
     'FORMULA',
     'FORMULA_EXP',
     'LOSS',
     'LEARNING_RATE',
     'OPTIMIZER',
-    'WEIGHTS'
+    'WEIGHTS',
 ]
 
 trainProfileTokens = [
@@ -33,4 +33,8 @@ trainTokens = [
 predictTokens = [
     'PREDICT',
     'TEST'
+]
+
+sqlKeywords = [
+    'TABLE',
 ]

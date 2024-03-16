@@ -1,25 +1,39 @@
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import median_absolute_error
+import numpy as np
 import dill
-from .RegressionManager import RegressionManager
 
-class LRManager(RegressionManager):
-
+class SimpleLinearRegression:
     def __init__(self):
-        super(LRManager,self).__init__(clonable=True)
+        self.coef_ = None
+        self.intercept_ = None
 
+    def fit(self, X, y):
+        X_mean = np.mean(X, axis=0)
+        y_mean = np.mean(y)
+        self.coef_ = np.linalg.inv(X.T @ X) @ X.T @ (y - y_mean)
+        self.intercept_ = y_mean - np.dot(self.coef_, X_mean)
+
+    def predict(self, X):
+        return X @ self.coef_ + self.intercept_
+
+    def is_fitted(self):
+        return self.coef_ is not None and self.intercept_ is not None
+
+
+from .RegressionManager import RegressionManager
+class LRManager(RegressionManager):
+    def __init__(self):
+        super().__init__(clonable=True)
 
     def create(self, name):
-        estimator = LinearRegression()
+        estimator = SimpleLinearRegression()
         return self.save(name, estimator)
 
     def trainValidate(self, name, Xtrain, Xtest, yTrain, yTest):
-
         dic = {}
         self.train(name, Xtrain, yTrain)
-        dic['training_mae'] = median_absolute_error(yTrain, self.predict(name, Xtrain))
+        dic['training_mae'] = np.median(np.abs(yTrain - self.predict(name, Xtrain)))
         if Xtest is not None:
-            dic['validation_mae'] = median_absolute_error(yTest, self.predict(name, Xtest))
+            dic['validation_mae'] = np.median(np.abs(yTest - self.predict(name, Xtest)))
         return dic
 
     def train(self, name, X, y):
@@ -32,21 +46,18 @@ class LRManager(RegressionManager):
         except Exception as e:
             print(f"Error during training of model {name}: {e}")
             raise e
+
     def predict(self, name, X):
         estimator = self.load(name)
-        pred =  estimator.predict(X)
-        return pred
-    
+        return estimator.predict(X)
+
     def evaluate(self, name, X, y):
         yPred = self.predict(name, X)
         dic = {}
-        dic['training_mae'] = median_absolute_error(y, yPred)
-        return dic, yPred
+        dic['training_mae'] = np.median(np.abs(y - yPred))
+        return dic, yPred, y
 
     def isFitted(self, name):
-        # Example implementation; adjust according to your model management system
         estimator = self.load(name)
-        return hasattr(estimator, 'coef_')  # For LinearRegression, check if it has 'coef_'
+        return estimator.is_fitted()
 
-
-    

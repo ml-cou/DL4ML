@@ -62,3 +62,6 @@ class FormulaProcessor:
         else:
             return df, df[self.fieldsX].values
     
+    def getYfromSQL(self, dataDb, sql):
+        df = pd.read_sql(sql, dataDb.connection())
+        return df [self.fieldY].values

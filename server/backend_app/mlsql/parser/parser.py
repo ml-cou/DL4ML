@@ -27,7 +27,7 @@ import ply.yacc as yacc
 import dill
 from .lexer import tokens
 from ..engine.ASTProcessor import ASTProcessor
-
+from ..data.setup import setup
 #******Environment Setup******
 
 ASTProcessor = ASTProcessor()
@@ -36,7 +36,7 @@ states = ['ESTIMATOR', 'TRAIN', 'TRAINING_PROFILE', 'USE', 'PREDICT' ]
 currentState = None
 currentDB = None #database connector instance, not url.
 
-DEBUG = False
+DEBUG = True
 def setDebug(debug = False):
     global DEBUG
     DEBUG = debug
@@ -46,16 +46,18 @@ global response
 response=''
 #***********Grammar******************
 def p_create_model(p):
-    '''exp : CREATE ESTIMATOR WORD TYPE WORD FORMULA FORMULA_EXP DELIMITER
-            | CREATE ESTIMATOR WORD TYPE WORD FORMULA FORMULA_EXP LOSS WORD DELIMITER
-            | CREATE ESTIMATOR WORD TYPE WORD FORMULA FORMULA_EXP LOSS WORD LEARNING_RATE FLOAT DELIMITER
-            | CREATE ESTIMATOR WORD TYPE WORD FORMULA FORMULA_EXP LOSS WORD LEARNING_RATE FLOAT OPTIMIZER WORD REGULARIZER WORD DELIMITER'''
+    '''exp : CREATE ESTIMATOR WORD MODEL_TYPE WORD FORMULA FORMULA_EXP DELIMITER
+            | CREATE ESTIMATOR WORD MODEL_TYPE WORD FORMULA FORMULA_EXP LOSS WORD DELIMITER
+            | CREATE ESTIMATOR WORD MODEL_TYPE WORD FORMULA FORMULA_EXP LOSS WORD LEARNING_RATE FLOAT DELIMITER
+            | CREATE ESTIMATOR WORD MODEL_TYPE WORD FORMULA FORMULA_EXP LOSS WORD LEARNING_RATE FLOAT OPTIMIZER WORD REGULARIZER WORD DELIMITER'''
+    setup()
     printMatchedRule('p_create_model')
     global currentState, formula
     currentState = ESTIMATOR
 
     length = len(p)
-
+    for i in range(length):
+        print("p is =",p[i])
     name = p[3]
     estimatorType = p[5]
     loss = None
@@ -81,7 +83,7 @@ def p_create_model(p):
         optimizer = p[lastPos]
         lastPos += 2
         regularizer = p[lastPos]
-
+    print("in create function \n ",name,estimatorType,formula,loss,lr,optimizer,regularizer)
     try:
         estimator = ASTProcessor.createEstimator(name=name, 
                                                 estimatorType=estimatorType, 
@@ -121,7 +123,7 @@ def p_training_profile(p):
         epoch = p[12]
     if length > 14:
         shuffle = p[14]
-    
+    print("in train function \n ", name, "\n ", sql, "\n ",)
     try:
         profile = ASTProcessor.createTrainingProfile(name=name, sql=sql, validationSplit=validationSplit, batchSize=batchSize, epoch=epoch, shuffle=shuffle)
         print(f"Created training profile:\n{profile}")
@@ -170,12 +172,10 @@ def p_predict(p):
         trainingProfileName = p[4]
 
     try:
-        df = ASTProcessor.predict(currentDB, estimatorName,sql=sql, trainingProfileName=trainingProfileName )
         global  response
-        response = pd.DataFrame(df)
-        print (df)
-        response=response.to_dict(orient='records')
-        print(df.to_string()) # TODO, use an internal state in parser and print with arrows and exit commands.
+        response = ASTProcessor.predict(currentDB, estimatorName,sql=sql, trainingProfileName=trainingProfileName )
+
+        # print(df.to_string()) # TODO, use an internal state in parser and print with arrows and exit commands.
     except Exception as e:
         printError(e)
     pass
@@ -206,21 +206,17 @@ def p_clone_model(p):
 def p_use_database(p):
     'exp : USE URL DELIMITER'
     printMatchedRule('p_use_database')
-    global currentDB
+    global currentDB, response
     current_directory = os.path.dirname(__file__)
     currentDBURL = os.path.join(current_directory,f'../{p[2]}')
 
     if ASTProcessor.hasDB(currentDBURL):
         print(f"selected {currentDBURL}")
-        global  response
-        response =f"selected {currentDBURL}"
+        response = {'text': f"selected {p[2]}"}
         currentDB = ASTProcessor.getDB(currentDBURL)
     else:
+        response = {'text': f'\'{p[2]}\' does not exist in the database engine.'}
         printError(f'\'{currentDBURL}\' does not exist in the database engine.')
-        currentDB = None
-    
-    pass
-
 def p_SQL(p):
     'exp : SQL DELIMITER'
     printMatchedRule('p_SQL')
@@ -278,6 +274,42 @@ The first open-source SQL for Machine Learning
 ''')
     pass
 
+def p_create_table(p):
+    '''exp : CREATE TABLE WORD DELIMITER'''
+    printMatchedRule('p_create_table')
+    print("in table")
+    # pass
+    table_name = p[3]
+    columns = p[5]  # This will be a list of tuples [(column_name, data_type), ...]
+
+    try:
+        ASTProcessor.create_table(currentDB, table_name, columns)
+        print(f"Table {table_name} created with columns {columns}")
+    except Exception as e:
+        printError(e)
+
+def p_table_columns(p):
+    '''table_columns : table_column ',' table_column
+                     | table_column'''
+    if len(p) == 4:
+        p[0] = p[1] + [p[3]]
+    else:
+        p[0] = [p[1]]
+
+def p_table_column(p):
+    '''table_column : WORD data_type'''
+    p[0] = (p[1], p[2])
+
+
+def p_data_type(p):
+    '''data_type : INT
+                 | FLOAT
+                 | CHAR
+                 | TEXT'''  # Add more data types as needed
+    p[0] = p[1]
+
+
+
 def _parser(cmd):
     # welcome()
     # print("Current directory is: " + currentDBURL)
@@ -299,15 +331,15 @@ def _parser(cmd):
     # if userInput[-1] != ';':
     #     prevInput += ' ' + userInput
     #     continue
-
     data = prevInput + userInput
     print(f"parsing {data}")
     p = parser.parse(data)
     print(p)
     prevInput = ''
-    #for single command
-    # return response
+    # for single command
+    # global response
+    return response
     #for multiple command
-    yield response
+    # yield response
         # pass
 

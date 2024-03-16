@@ -10,3 +10,8 @@ class RegressionManager(EstimatorManager):
 
     def getPercentageError(self, y, yPred):
         return (y - yPred) * 100 / y
+    def getAccuracy(self, y, yPred):
+        # This method can be added for classification tasks
+        correct_predictions = (y == yPred).sum()
+        total_predictions = len(y)
+        return (correct_predictions / total_predictions) * 100
