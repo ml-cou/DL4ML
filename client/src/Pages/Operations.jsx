@@ -6,8 +6,8 @@ import React, { useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import { BiText } from "react-icons/bi";
 import { FaRegFileAudio } from "react-icons/fa6";
-import AgGridTable from "../Components/AgGridTable";
 import AudioInput from "../Components/AudioInput";
+import ShowLog from "../Components/ShowLog";
 
 /*
 CREATE ESTIMATOR salaryPredictor TYPE LR FORMULA $salary~years$;
@@ -23,13 +23,22 @@ function Operations() {
   const [query, setQuery] = useState("");
   const [rowData, setRowData] = useState();
   const [fileList, setFileList] = useState([]);
+  const [data, setData] = useState([
+    // {
+    //   text: "Selected lol",
+    //   table: [
+    //     { name: "ahnaf", age: 20 },
+    //     { name: "shifat", age: 19 },
+    //   ],
+    // },
+  ]);
 
   const handleExecute = async () => {
     setRowData();
-    // if (fileList.length === 0) {
-    //   message.error("File is missing");
-    //   return;
-    // }
+    if (fileList.length === 0) {
+      message.error("File is missing");
+      return;
+    }
     if (!query) {
       toast.error("Query can't be empty");
       return;
@@ -41,7 +50,6 @@ function Operations() {
     let inputs = query.split(";");
     inputs = inputs.slice(0, inputs.length - 1);
     inputs = inputs.map((val) => val.trim() + ";");
-    console.log(inputs)
     for (let input of inputs) {
       if (!input) {
         toast.error("Invalid Query.");
@@ -57,16 +65,16 @@ function Operations() {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
-      console.log(data);
-      setRowData(data);
+      const d = await res.json();
+      console.log(d);
+      setData((prev) => [...prev, d]);
     } catch (error) {
       console.log(error);
     }
   };
 
   return (
-    <div className="mt-10 max-w-lg mx-auto">
+    <div className="mt-10 max-w-2xl mx-auto">
       <Toaster />
       <div className="text-center">
         <Radio.Group
@@ -100,7 +108,7 @@ function Operations() {
           setAudioTranscript={setAudioTranscript}
         />
       )}
-      <div className="mt-6  grid">
+      <div className="mt-2  grid sticky top-0 bg-white z-50 py-4 ">
         <h1 className="text-left font-secondary text-lg font-semibold mb-2 ">
           Enter your query:
         </h1>
@@ -133,11 +141,7 @@ function Operations() {
           Execute
         </button>
       </div>
-      {rowData && (
-        <div className="mt-8  mx-auto">
-          <AgGridTable rowData={rowData} />
-        </div>
-      )}
+      {data.length > 0 && <ShowLog data={data} setData={setData} />}
     </div>
   );
 }
